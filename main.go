@@ -44,11 +44,32 @@ func main() {
 
 	//delete aspace dos
 	for _, uri := range uris {
+
+		//get the DO metadata
+		domd, err := client.GetDigitalObject(uri.RepoID, uri.DOID)
+		if err != nil {
+			log.Printf("[ERROR] %s", strings.ReplaceAll("\n", "", err.Error()))
+			continue
+		}
+
+		//get the uris from the file version
+		fileversionUris := ""
+		for i, fv := range domd.FileVersions {
+			if i > 0 {
+				fileversionUris = fileversionUris + ", "
+			}
+			fileversionUris = fileversionUris + fv.FileURI
+		}
+
+		log.Printf("[INFO] DO-URI: %s, TITLE: %s, FILE-URIS: %s", domd.URI, domd.Title, fileversionUris)
+
+		//delete tht do
 		msg, err := client.DeleteDigitalObject(uri.RepoID, uri.DOID)
 		if err != nil {
 			log.Printf("[ERROR] %s", strings.ReplaceAll("\n", "", err.Error()))
+			continue
 		} else {
-			log.Println("[INFO] %s", strings.ReplaceAll("\n", "", msg))
+			log.Println("[INFO] DELETED %s %s", domd.URI, strings.ReplaceAll("\n", "", msg))
 		}
 	}
 }

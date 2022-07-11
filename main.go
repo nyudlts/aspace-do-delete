@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"flag"
-	"fmt"
 	"github.com/nyudlts/go-aspace"
 	"log"
 	"os"
@@ -30,18 +29,20 @@ func init() {
 }
 
 func main() {
+	//parse flags
 	flag.Parse()
-	parselist()
-	for _, uri := range uris {
-		fmt.Printf("%v\n", uri)
-	}
 
+	//parse uri list
+	parselist()
+
+	//create a client
 	var err error
 	client, err = aspace.NewClient(config, environment, 20)
 	if err != nil {
 		panic(err)
 	}
 
+	//delete aspace dos
 	for _, uri := range uris {
 		msg, err := client.DeleteDigitalObject(uri.RepoID, uri.DOID)
 		if err != nil {

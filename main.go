@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"flag"
+	"fmt"
 	"github.com/nyudlts/go-aspace"
 	"log"
 	"os"
@@ -20,27 +21,36 @@ var (
 	environment string
 	uris        []AspaceDOID
 	client      *aspace.ASClient
+	test        bool
 )
 
 func init() {
 	flag.StringVar(&inFile, "input-file", "", "the list of do uris to delete")
 	flag.StringVar(&config, "config", "", "the location of a go-aspace config file")
-	flag.StringVar(&inFile, "environment", "", "the environment to delete files from")
+	flag.StringVar(&environment, "environment", "", "the environment to delete files from")
+	flag.BoolVar(&test, "test", false, "")
 }
 
 func main() {
 	//parse flags
 	flag.Parse()
 
-	//parse uri list
-	parselist()
+	//setup the log
+	logFile, err := os.Create(fmt.Sprintf("aspace-do-delete-%s.log", environment))
+	if err != nil {
+		panic(err)
+	}
+	log.SetOutput(logFile)
 
 	//create a client
-	var err error
+	fmt.Println(test)
 	client, err = aspace.NewClient(config, environment, 20)
 	if err != nil {
 		panic(err)
 	}
+
+	//parse uri list
+	parselist()
 
 	//delete aspace dos
 	for _, uri := range uris {
@@ -48,7 +58,9 @@ func main() {
 		//get the DO metadata
 		domd, err := client.GetDigitalObject(uri.RepoID, uri.DOID)
 		if err != nil {
-			log.Printf("[ERROR] %s", strings.ReplaceAll("\n", "", err.Error()))
+			doErrMsg := fmt.Sprintf("[ERROR] %d %d %s", uri.RepoID, uri.DOID, strings.ReplaceAll(err.Error(), "\n", " "))
+			fmt.Println(doErrMsg)
+			log.Println(doErrMsg)
 			continue
 		}
 
@@ -61,16 +73,25 @@ func main() {
 			fileversionUris = fileversionUris + fv.FileURI
 		}
 
-		log.Printf("[INFO] DO-URI: %s, TITLE: %s, FILE-URIS: %s", domd.URI, domd.Title, fileversionUris)
+		infoMsg1 := fmt.Sprintf("[INFO] DO-URI: %s, TITLE: %s, FILE-URIS: %s", domd.URI, domd.Title, fileversionUris)
+		fmt.Println(infoMsg1)
+		log.Println(infoMsg1)
 
-		//delete tht do
-		msg, err := client.DeleteDigitalObject(uri.RepoID, uri.DOID)
-		if err != nil {
-			log.Printf("[ERROR] %s", strings.ReplaceAll("\n", "", err.Error()))
-			continue
-		} else {
-			log.Println("[INFO] DELETED %s %s", domd.URI, strings.ReplaceAll("\n", "", msg))
+		//delete the do
+		if test == false {
+			msg, err := client.DeleteDigitalObject(uri.RepoID, uri.DOID)
+			if err != nil {
+				errMsg := fmt.Sprintf("[ERROR] %s", strings.ReplaceAll(err.Error(), "\n", " "))
+				fmt.Println(errMsg)
+				log.Println(errMsg)
+				continue
+			} else {
+				infoMsg2 := fmt.Sprintf("[INFO] DELETED %s %s", domd.URI, strings.ReplaceAll(msg, "\n", " "))
+				fmt.Println(infoMsg2)
+				log.Println(infoMsg2)
+			}
 		}
+
 	}
 }
 

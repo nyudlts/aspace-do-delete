@@ -1,10 +1,9 @@
 module aspace-do-delete
 
-go 1.18
+go 1.22
 
-require (
-	github.com/lestrrat-go/libxml2 v0.0.0-20201123224832-e6d9de61b80d // indirect
-	github.com/nyudlts/go-aspace v0.3.8-0.20220511180002-4b1be8a44d6f // indirect
-	github.com/pkg/errors v0.9.1 // indirect
-	gopkg.in/yaml.v2 v2.3.0 // indirect
-)
+toolchain go1.22.5
+
+require github.com/nyudlts/go-aspace v0.6.2-0.20240729183828-51b02243b270
+
+require gopkg.in/yaml.v2 v2.3.0 // indirect

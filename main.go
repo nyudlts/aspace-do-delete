@@ -4,10 +4,11 @@ import (
 	"bufio"
 	"flag"
 	"fmt"
-	"github.com/nyudlts/go-aspace"
 	"log"
 	"os"
 	"strings"
+
+	"github.com/nyudlts/go-aspace"
 )
 
 type AspaceDOID struct {
@@ -23,6 +24,8 @@ var (
 	client      *aspace.ASClient
 	test        bool
 )
+
+const placeholder = "https://hdl.handle.net/2333.1/material-request-placeholder"
 
 func init() {
 	flag.StringVar(&inFile, "input-file", "", "the list of do uris to delete")
@@ -65,34 +68,37 @@ func main() {
 		}
 
 		//get the uris from the file version
-		fileversionUris := ""
-		for i, fv := range domd.FileVersions {
-			if i > 0 {
-				fileversionUris = fileversionUris + ", "
-			}
-			fileversionUris = fileversionUris + fv.FileURI
+		fileversionUris := []string{}
+		for _, fv := range domd.FileVersions {
+			fileversionUris = append(fileversionUris, fv.FileURI)
 		}
 
 		infoMsg1 := fmt.Sprintf("[INFO] DO-URI: %s, TITLE: %s, FILE-URIS: %s", domd.URI, domd.Title, fileversionUris)
 		fmt.Println(infoMsg1)
 		log.Println(infoMsg1)
 
-		//delete the do
-		if test == false {
-			msg, err := client.DeleteDigitalObject(uri.RepoID, uri.DOID)
-			if err != nil {
-				errMsg := fmt.Sprintf("[ERROR] %s", strings.ReplaceAll(err.Error(), "\n", " "))
-				fmt.Println(errMsg)
-				log.Println(errMsg)
-				continue
+		if len(fileversionUris) == 1 && fileversionUris[0] == placeholder {
+			//delete the do
+			if !test {
+				msg, err := client.DeleteDigitalObject(uri.RepoID, uri.DOID)
+				if err != nil {
+					errMsg := fmt.Sprintf("[ERROR] %s", strings.ReplaceAll(err.Error(), "\n", " "))
+					fmt.Println(errMsg)
+					log.Println(errMsg)
+					continue
+				} else {
+					infoMsg2 := fmt.Sprintf("[INFO] DELETED %s %s", domd.URI, strings.ReplaceAll(msg, "\n", " "))
+					fmt.Println(infoMsg2)
+					log.Println(infoMsg2)
+				}
 			} else {
-				infoMsg2 := fmt.Sprintf("[INFO] DELETED %s %s", domd.URI, strings.ReplaceAll(msg, "\n", " "))
-				fmt.Println(infoMsg2)
-				log.Println(infoMsg2)
+				msg := fmt.Sprintf("[INFO] skipping %s - in test mode", domd.URI)
+				fmt.Println(msg)
+				log.Println(msg)
 			}
 		}
-
 	}
+
 }
 
 func parselist() {
